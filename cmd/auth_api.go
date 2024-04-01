@@ -1,32 +1,61 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"net"
 
-	"github.com/nguyentrunghieu15/auth-api-vcs-pj/model"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+	"github.com/nguyentrunghieu15/auth-api-vcs-pj/pkg/db"
+	"github.com/nguyentrunghieu15/auth-api-vcs-pj/pkg/repository"
+	"github.com/nguyentrunghieu15/auth-api-vcs-pj/pkg/server"
+	"github.com/nguyentrunghieu15/common-vcs-prj/apu/auth"
+	"google.golang.org/grpc"
 )
+
+type ConfigServer struct {
+	Network string
+	Address string
+}
 
 func main() {
 
-	dsn := "host=localhost port=5432 dbname=on_demand_services_db user=hiro password=1 connect_timeout=10 sslmode=prefer"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatal("Can't connect DB")
+	var configDb = db.DBConfig{
+		Host:     "localhost",
+		Port:     "5432",
+		Database: "on_demand_services_db",
+		Username: "hiro",
+		Password: "1",
+		TimeOut:  10,
+		SslModel: "prefer",
 	}
-	fmt.Print(db)
-	var user model.User
-	var avatar model.Avatar
 
-	// works because destination struct is passed in
-	db.Preload(clause.Associations).First(&user)
-	// SELECT * FROM `users` ORDER BY `users`.`id` LIMIT 1
+	var configServer = ConfigServer{
+		Network: "tcp",
+		Address: "localhost:3456",
+	}
 
-	fmt.Println(user)
+	// Connect to Postgre DB
+	db, err := db.FactoryConnection(configDb, db.POSTGRE)
+	if err != nil {
+		log.Fatalln("Can't connect DB")
+	}
+	log.Println("Connected Database")
 
-	db.First(&avatar)
-	fmt.Println(avatar)
+	// create a listener on config server
+	lis, err := net.Listen(configServer.Network, configServer.Address)
+
+	if err != nil {
+		log.Fatalf("Cant not listen on address %v\n,Error:%v\n", configServer.Address, err)
+	}
+
+	s := grpc.NewServer()
+
+	auth.RegisterAuthServiceServer(s,
+		&server.AuthServer{UserRepo: &repository.UserRepository{Db: db}})
+
+	log.Println("Creatting GRPC server")
+	if err := s.Serve(lis); err != nil {
+		log.Fatalln("Cant not create gRPC server", err)
+	} else {
+	}
+	defer lis.Close()
 }
