@@ -21,6 +21,7 @@ const (
 )
 
 func (a *AuthServer) Login(ctx context.Context, msg *auth.LoginMessage) (*auth.LoginResponseMessage, error) {
+	log.Printf("Invoke login request with message %v", msg)
 	if err := ctx.Err(); err == context.DeadlineExceeded {
 		log.Printf("Auth Server - Deadline Exceeded : Request Login email %v\n", msg.Username)
 	}
@@ -48,6 +49,7 @@ func (a *AuthServer) Login(ctx context.Context, msg *auth.LoginMessage) (*auth.L
 }
 
 func (a *AuthServer) ExtensionToken(ctx context.Context, token *auth.ExtensionAccessToken) (*auth.ReplyExtensionAccessToken, error) {
+	log.Printf("Invoke ExtensionToken request with message %v", token)
 	if token != nil {
 		oldAccessToken, err := jwt.Parse(token.OldAccessToken, func(token *jwt.Token) (interface{}, error) {
 
