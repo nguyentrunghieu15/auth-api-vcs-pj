@@ -19,7 +19,7 @@ type ConfigServer struct {
 func main() {
 
 	var configDb = db.DBConfig{
-		Host:     "localhost",
+		Host:     "postgre",
 		Port:     "5432",
 		Database: "on_demand_services_db",
 		Username: "hiro",

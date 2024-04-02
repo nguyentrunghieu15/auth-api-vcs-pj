@@ -6,4 +6,4 @@ COPY . .
 
 RUN go mod tidy
 
-CMD ["go", "run", "./cmd/auth_api.go"]
+ENTRYPOINT [ "go run ./cmd/auth_api.go" ]
